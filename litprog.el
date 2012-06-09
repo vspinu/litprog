@@ -209,37 +209,102 @@ Each element is of the form '(mode \"ext1\" \"ext2\" ...)."
   "")
 (make-variable-buffer-local litprog-select-mode-function)
 
-(defvar litprog-defaults
-  "Holds all the defaults (used for reinitialization). "
-  '((litprog-doc-mode                   . nil)
-    (litprog-code-mode                  . nil)
-    (litprog-select-mode-function       . 'litprog-select-mode)
-    (litprog-chunk-start-pattern        . nil)
-    (litprog-chunk-end-pattern          . nil)
-    (litprog-font-lock-keywords         . nil)
-    (litprog-font-lock-matcher          . nil)
-    (litprog-font-lock-syntactic-matcher . nil)
-    (litprog-font-lock-literal-syntactic-matcher . nil)
-    ))
+(defvar litprog-settings nil
+  "An nested plist of mode and backend configuration
+  options.
 
-(defvar litprog--backends nil
-  "An nested plist of backends and config options (internal
-  use).")
+It is a nested plist of backends, which are plists of plists
+representing options per mode. There is a special backend
+'defaults' which hold default options for each mode.
 
-(defmacro litprog-backend-set (backend  mode &rest plist)
-  "BACKEND and MODE  should be symbols."
+The names of modes are short names, that is, they are not
+prefixed by lp- or postfixed by -mode. lp-foo-mode is simply
+registered as foo.
+
+Use `litprog-customize' function to set mode specific, or backend
+specific options.
+
+Each configuration plist can contain a special key
+'litprog-inherit' which is a list of modes or backends this
+options inherits from. All inherited options are automatically
+installed during initialization of the mode or backend. To
+specify a mode use just it's name. To specify a backend use a
+cons (backend . mode).
+
+All modes and backends implicitly inherit from the defaults of
+litprog mode. Thus, before a backend is installed all the
+settings are reverted to the default state.
+
+")
+
+;; (defun litprog-short-mname (symb)
+;;   "Shorten mode name"
+;;   (if (symbolp symb)
+;;       (let ((name (symbol-name symb)))
+;;         (setq name (replace-regexp-in-string "lp-\\|-mode" "" name))
+;;         (intern name))
+;;     (error "Elements of what souled be unquoted symbols")))
+
+(defmacro litprog-customize (what &rest body)
+  "Customize litprog modes and backends.
+WHAT can be a name of a mode or a pair (backend mode-name).
+
+Customization pairs SYM and VAL are just as in `setq'.
+
+\(fn what [SYM VAL] ...)"
+
   (declare (indent defun))
-  `(let* ((BE (plist-get litprog--backends ',backend))
-          (M (plist-get BE ',mode)))
-     (loop for x on ',plist by 'cddr
+  (unless (listp what)
+    (setq what `(defaults ,what)))
+  `(let* ((backend ',(car what))
+          (mode  ',(cadr what))
+          (BE (plist-get litprog-settings backend))
+          (M (plist-get BE mode)))
+     (loop for x on ',body by 'cddr
            do (setq M (plist-put M (car x) (eval (cadr x)))))
-     (setq litprog--backends
-           (plist-put litprog--backends ',backend (plist-put BE ',mode M)))))
+     (setq litprog-settings
+           (plist-put litprog-settings backend (plist-put BE mode M)))))
 
-(litprog-backend-set test MMM
-  fff (+ 45 444)
-  ppp "sfdsfd"
+(defmacro litprog-setq (what)
+  "Install customizations of modes and backends.
+WHAT can be a name of a mode or a pair (backend mode-name).
+
+If the plist associated with the mode contains litprog-inherit
+name than `litprog-setq' is first called on those. This
+implements a basic inheritance mechanism of configuration
+options. Note that there is no explicit check for recursion.
+"
+  (declare (indent defun))
+  (unless (listp what)
+    (setq what `(defaults ,what)))
+  `(let* ((backend (plist-get litprog-settings ',(car what)))
+          (mcust   (plist-get backend ',(cadr what))))
+     ;; set all the inherited modes
+     (mapcar 'litprog-setq (plist-get mcust 'litprog-inherit))
+     (dbg mcust)
+     (loop for x on mcust by 'cddr
+           do (set (car x)  (cadr x)))))
+  
+  
+;; (litprog-customize (test lp-my-mode)
+;;   fff (+ 45 444)
+;;   ppp nil nnn
+;;   )
+
+
+(litprog-customize litprog-mode
+  litprog-doc-mode                      888
+  litprog-code-mode                     nil
+  litprog-select-mode-function          'litprog-select-modennn
+  litprog-chunk-start-pattern           nil
+  litprog-chunk-end-pattern             nil
+  litprog-font-lock-keywords            nil
+  litprog-font-lock-matcher             nil
+  litprog-font-lock-syntactic-matcher   nil
+  litprog-font-lock-literal-syntactic-matcher  nil
   )
+
+;; litprog-settings
 
 (defun linprog-install-modes ()
   ;; Extract values of local variables now, so we know the doc and
@@ -312,6 +377,7 @@ Supports differnt major modes for doc and code chunks using multi-mode.
 
 Note: This is the major mode of the base buffer. 
 "
+  (litprog-setq litprog-mode)
 )
 
 
