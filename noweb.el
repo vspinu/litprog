@@ -73,7 +73,7 @@
   :type 'function
   :group 'noweb)
 (make-variable-buffer-local 'noweb-doc-mode)
-(put 'noweb-code-mode 'safe-local-variable 'multi-mode-major-mode-p)
+(put 'noweb-doc-mode 'safe-local-variable 'multi-mode-major-mode-p)
 
 (defcustom noweb-code-mode 'fundamental-mode
   "Major mode for code chunks."
@@ -507,6 +507,8 @@ The partial chunk name must be preceded by `<<'."
 (add-to-list 'debug-ignored-errors "No \\sw+ matching chunk")
 (add-to-list 'debug-ignored-errors "No completion for ")
 (add-to-list 'debug-ignored-errors "Not in a code chunk")
+(add-to-list 'auto-mode-alist '("\\.nw$" . noweb-mode2))
+
 
 (provide 'noweb)
 ;;; noweb.el ends here
