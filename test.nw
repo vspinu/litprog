@@ -56,6 +56,18 @@ opts_chunk$set(fig.path='figure/beamer-',fig.align='center',fig.show='hold',size
 @
 
 
+\makeatother
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+opts_chunk$set(fig.path='figure/beamer-',fig.align='center',fig.show='hold',size='footnotesize')
+
+
+@
+
+
+
 \title[knitr, Beamer, and FragileFrame]{A Minimal Demo of knitr with Beamer and Fragile Frames}
 
 
@@ -101,7 +113,7 @@ OK, let's get started with just some text:
 
 <<echo=FALSE,results='hide'>>=
 # some setup
-options(width=60)  # make the printing fit on the page
+qoptions(width=60)  # make the printing fit on the page
 set.seed(1121)   # make the results repeatable
 @
 
@@ -149,3 +161,4 @@ to double-check everything...
 \lyxframeend{}
 
 \end{document}
+em
