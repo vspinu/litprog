@@ -136,10 +136,6 @@ Internal use.  Buffer local.")
 Internal use.  Buffer local.")
 (make-variable-buffer-local 'multi-normal-fontify-function)
 
-(defvar multi-normal-fontify-functions nil
-  "Fontification functions normally used by the buffer's major mode.
-Internal use.  Buffer local.")
-(make-variable-buffer-local 'multi-normal-fontify-functions)
 
 (defvar multi-indirect-buffer-hook nil
   "Hook run by `multi-install-mode' in each indirect buffer.
@@ -185,6 +181,10 @@ of the alist.")
     (unwind-protect
 	(hack-local-variables)
       (fset 'hack-one-local-variable late-hack))))
+
+(defvar multi-killed-once nil
+  "Internal use.")
+(make-variable-buffer-local 'multi-killed-once)
 
 (defun multi-install-mode (mode &optional chunk-fn base)
   "Add MODE to the multiple major modes supported by the current buffer.
@@ -275,6 +275,7 @@ is the base mode."
 				     (call-interactively ',tab))))
 			      map))
 		      minor-mode-map-alist)))
+
 	    (setq multi-normal-fontify-function
 		  font-lock-fontify-region-function)
 	    (set (make-local-variable 'font-lock-fontify-region-function)
@@ -284,15 +285,22 @@ is the base mode."
 	    ;; Don't let parse-partial-sexp get fooled by syntax outside
 	    ;; the chunk being fontified.  (Not in Emacs 21.)
 	    (set (make-local-variable 'font-lock-dont-widen) t)
+
 	    (setq multi-late-index-function imenu-create-index-function)
 	    (setq imenu-create-index-function #'multi-create-index
 		  multi-indirect-buffer-hook hook)
+
 	    ;; Kill the base buffer along with the indirect one; careful not
 	    ;; to infloop.
 	    (add-hook 'kill-buffer-hook
 		      '(lambda ()
-			 (setq kill-buffer-hook nil)
-			 (kill-buffer (buffer-base-buffer)))
+                         ;; (setq kill-buffer-hook nil) :emacs 24 bug (killing
+                         ;; dead buffer triggers an error)
+                         (let ((base (buffer-base-buffer)))
+                           (if  base
+                               (unless (buffer-local-value 'multi-killed-once base)
+                                 (kill-buffer base))
+                             (setq multi-killed-once t))))
 		      t t)
 	    ;; This should probably be at the front of the hook list, so
 	    ;; that other hook functions get run in the (perhaps)
