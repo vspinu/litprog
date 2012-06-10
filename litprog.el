@@ -30,7 +30,7 @@
 ;;  Based on noweb.el by Dave Love.
 
 
-(load (expand-file-name  "contrib/multi-mode.el"  ess-lisp-directory))
+
 ;; (require 'multi-mode)
 
 (eval-when-compile
@@ -79,26 +79,26 @@ There can be several code modes.
 (make-variable-buffer-local 'litprog-chunk-header-pattern)
 
 
-(defvar litprog-font-lock-matcher nil
+(defvar litprog-fl-matcher nil
   "Matcher used in code buffers to set chunk header fontification.
 If nil `litprog-chunk-start-pattern'\\|`litprog-chunk-end-pattern' is used.
 See `font-lock-keywords'.
 ")
 
-(defvar litprog-font-lock-syntactic-matcher nil
+(defvar litprog-fl-syntactic-matcher nil
   "Matcher used in code buffers to set chunk header to comment syntax.
 If nil `litprog-chunk-start-pattern'\\|`litprog-chunk-end-pattern' is used.
 See `font-lock-syntactic-keywords'.
 ")
 
 
-(defvar litprog-font-lock-literal-syntactic-matcher nil
+(defvar litprog-fl-literal-syntactic-matcher nil
   "Matcher used in doc buffers to set in-line literals to string syntax.
 ")
 
-(defvar litprog-font-lock-keywords nil
+(defvar litprog-fl-keywords nil
   "A list of font lock keywords for headers")
-(make-variable-buffer-local 'litprog-font-lock-keywords)
+(make-variable-buffer-local 'litprog-fl-keywords)
 
 
 (defcustom litprog-prefix-key "\M-n"
@@ -107,51 +107,6 @@ Not effective after loading the LitProg library."
   :group 'LitProg
   :type '(choice string vector))
 
-
-(defvar litprog-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map litprog-prefix-key
-      (let ((map (make-sparse-keymap)))
-	(define-key map "\C-n" 'litprog-goto-next)
-	(define-key map "\C-p" 'litprog-goto-prev)
-	;; (define-key map "\M-n" 'litprog-goto-next)
-	;; (define-key map "\M-p" 'litprog-goto-prev)
-	;; (define-key map "c" 'litprog-code-next)
-	;; (define-key map "C" 'litprog-code-prev)
-	;; (define-key map "d" 'litprog-doc-next)
-	;; (define-key map "D" 'litprog-doc-prev)
-        ;; Use imenu.
-        ;; 	(define-key map "\C-g" 'litprog-goto-chunk)
-
-        (define-key map "\M-k" 'litprog-kill-chunk)
-        (define-key map "\M-K" 'litprog-kill-chunk-pair)
-        (define-key map "\M-m" 'litprog-mark-chunk)
-        (define-key map "\M-M" 'litprog-mark-chunk-pair)
-        (define-key map "\M-n" 'litprog-narrow-to-chunk)
-        (define-key map "\M-N" 'litprog-narrow-to-chunk-pair)
-        (define-key map "\C-t" 'litprog-toggle-narrowing)
-	(define-key map "\M-i" 'litprog-new-chunk)
-
-	(if (bound-and-true-p litprog-electric-<)
-	    (define-key litprog-mode-map "<" #'litprog-electric-<))
-	(if (bound-and-true-p litprog-electric-@)
-	    (define-key litprog-mode-map "@" #'litprog-electric-@))
-	map))
-    (define-key map [menu-bar LitProG]
-      (cons "LitProG"
-	    (let ((map (make-sparse-keymap "LitProG")))
-	      (define-key-after map [goto-prev]
-		'(menu-item "Previous matching chunk" litprog-goto-prev))
-	      (define-key-after map [mark]
-		'(menu-item "Mark chunk" litprog-mark-chunk))
-	      (define-key-after map [kill]
-		'(menu-item "Kill chunk" litprog-kill-chunk))
-	      (define-key-after map [new]
-		'(menu-item "New chunk" litprog-new-chunk))
-	      map)))
-    map))
-
-
 (defvar litprog-buffer nil
   "Internal use.")
 (defvar litprog-doc-buffer nil
@@ -159,29 +114,13 @@ Not effective after loading the LitProg library."
 (defvar litprog-code-buffer nil
   "Internal use.")
 
-(defun litprog-set-local-variables ()
-  (set (make-local-variable 'litprog-code-buffer) litprog-code-buffer)
-  (set (make-local-variable 'litprog-doc-buffer) litprog-doc-buffer)
-  (set (make-local-variable 'litprog-buffer) litprog-buffer)
-  (set (make-local-variable 'parse-sexp-lookup-properties) t)
-  (unless (eq litprog-buffer (current-buffer))
-    (litprog-minor-mode 1)
-    (font-lock-set-defaults))
-  ;; (add-hook (make-local-variable 'multi-select-mode-hook)
-  ;;           'litprog-select-litprog-mode-hook)
-  )
 
 
-;; Used to propagate the bindings to the indirect buffers.
-(define-minor-mode litprog-minor-mode
-  "LitProg minor mode, used in code and doc chunks."
-  nil " LP" litprog-mode-map)
 
 
 (defun litprog-check-essential-vars ()
   "Error if any of these are not set"
   (dolist (var '(litprog-doc-mode litprog-chunk-start-pattern litprog-chunk-end-pattern))
-    (dbg var)
     (unless (symbol-value var)
       (error (symbol-name var) " is not set"))))
 
@@ -209,7 +148,38 @@ Each element is of the form '(mode \"ext1\" \"ext2\" ...)."
   "")
 (make-variable-buffer-local litprog-select-mode-function)
 
-(defvar litprog-settings nil
+
+;;; NARROWING
+(defvar litprog--narrowing nil
+  "Whether paired narrowing is in place.")
+
+(defun litprog-narrow-to-chunk-pair ()
+  "todo:"
+  )
+
+
+;;; NAVIGATION
+
+(defun litprog-next-header (&optional n)
+  "Goto to the Nth code chunk from point."
+  (interactive "p")
+  (when litprog-narrowing
+    (whiden))
+  (unless (re-search-forward  litprog-chunk-start-pattern nil t n)
+    (message "No more chunk headers found."))
+  (if litprog-narrowing
+      (litprog-narrow-to-chunk-pair)))
+
+(defun litprog-previous-header (&optional n)
+  (interactive "p")
+  (litprog-next-header (- n))
+  )
+
+
+
+;;; CONFIGURATION
+
+(defvar litprog-options nil
   "An nested plist of mode and backend configuration
   options.
 
@@ -258,30 +228,29 @@ Customization pairs SYM and VAL are just as in `setq'.
     (setq what `(defaults ,what)))
   `(let* ((backend ',(car what))
           (mode  ',(cadr what))
-          (BE (plist-get litprog-settings backend))
+          (BE (plist-get litprog-options backend))
           (M (plist-get BE mode)))
      (loop for x on ',body by 'cddr
            do (setq M (plist-put M (car x) (eval (cadr x)))))
-     (setq litprog-settings
-           (plist-put litprog-settings backend (plist-put BE mode M)))))
+     (setq litprog-options
+           (plist-put litprog-options backend (plist-put BE mode M)))))
 
-(defmacro litprog-setq (what)
+(defmacro litprog-set-options (what)
   "Install customizations of modes and backends.
 WHAT can be a name of a mode or a pair (backend mode-name).
 
 If the plist associated with the mode contains litprog-inherit
-name than `litprog-setq' is first called on those. This
+name than `litprog-set-options' is first called on those. This
 implements a basic inheritance mechanism of configuration
 options. Note that there is no explicit check for recursion.
 "
   (declare (indent defun))
   (unless (listp what)
     (setq what `(defaults ,what)))
-  `(let* ((backend (plist-get litprog-settings ',(car what)))
+  `(let* ((backend (plist-get litprog-options ',(car what)))
           (mcust   (plist-get backend ',(cadr what))))
      ;; set all the inherited modes
-     (mapcar 'litprog-setq (plist-get mcust 'litprog-inherit))
-     (dbg mcust)
+     (mapcar 'litprog-set-options (plist-get mcust 'litprog-inherit))
      (loop for x on mcust by 'cddr
            do (set (car x)  (cadr x)))))
   
@@ -293,18 +262,56 @@ options. Note that there is no explicit check for recursion.
 
 
 (litprog-customize litprog-mode
-  litprog-doc-mode                      888
+  litprog-doc-mode                      nil
   litprog-code-mode                     nil
-  litprog-select-mode-function          'litprog-select-modennn
+  litprog-get-mode-at-point-function         'litprog-get-mode-at-point
   litprog-chunk-start-pattern           nil
   litprog-chunk-end-pattern             nil
-  litprog-font-lock-keywords            nil
-  litprog-font-lock-matcher             nil
-  litprog-font-lock-syntactic-matcher   nil
-  litprog-font-lock-literal-syntactic-matcher  nil
+  litprog-fl-keywords            nil
+  litprog-fl-matcher             nil
+  litprog-fl-syntactic-matcher   nil
+  litprog-fl-literal-syntactic-matcher  nil
   )
 
-;; litprog-settings
+
+;;; MAIN
+
+
+(defun litprog-get-mode-at-point-default (pos)
+  "Mode-selecting function for use in `multi-mode-alist'."
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char pos)
+      (let* ((reg (concat "\\(?1:\\(" litprog-chunk-end-pattern "\\)\\)\\|\\(?2:\\("
+                          litprog-chunk-start-pattern "\\)\\)"))
+             (found (re-search-backward reg nil t))
+             (start-doc (or (null found) (match-end 1)))
+             (start (goto-char (if found (match-end 0) (point-min))))
+             (end0 (if (re-search-forward reg nil t)
+                       (match-beginning 0)))
+             (end1 (and end0 (match-end 0)))
+             )
+        (if (or (null end0) (< pos end0))
+            (if start-doc
+                (multi-make-list litprog-doc-mode start (or end0 (point-max)))
+              (multi-make-list litprog-code-mode start (or end0 (point-max))))
+          (multi-make-list 'litprog-mode end0 end1))))))
+
+
+(defun litprog-set-local-variables ()
+  (setq litprog-doc-mode doc-mode)
+  (setq litprog-code-mode code-mode)
+  (set (make-local-variable 'litprog-code-buffer) code-buffer)
+  (set (make-local-variable 'litprog-doc-buffer) doc-buffer)
+  (set (make-local-variable 'litprog-buffer) base-buffer)
+  (set (make-local-variable 'parse-sexp-lookup-properties) t)
+  (unless (eq litprog-buffer (current-buffer))
+    (litprog-minor-mode 1)
+    (font-lock-set-defaults))
+  ;; (add-hook (make-local-variable 'multi-select-mode-hook)
+  ;;           'litprog-select-litprog-mode-hook)
+  )
 
 (defun linprog-install-modes ()
   ;; Extract values of local variables now, so we know the doc and
@@ -318,19 +325,21 @@ options. Note that there is no explicit check for recursion.
                 (litprog-guess-code-mode-from-name (buffer-file-name))
                 'fundamental-mode))
     (let ((multi-mode-alist
-           (list (cons 'litprog-mode            litprog-select-mode-function)
+           (list (cons 'litprog-mode            litprog-get-mode-at-point-function)
                  (cons litprog-doc-mode         nil)
                  (cons litprog-code-mode        nil))))
       (multi-mode-install-modes)))
-  (let ((litprog-doc-buffer (cdr (assq litprog-doc-mode
+  (let ((doc-buffer (cdr (assq litprog-doc-mode
                                        multi-indirect-buffers-alist)))
-        (litprog-code-buffer (cdr (assq litprog-code-mode
+        (code-buffer (cdr (assq litprog-code-mode
                                        multi-indirect-buffers-alist)))
-        (litprog-buffer (cdr (assq 'litprog-mode
+        (base-buffer (cdr (assq 'litprog-mode
                                    multi-indirect-buffers-alist)))
         (chunk-pattern (concat litprog-chunk-start-pattern "\\|"
-                               litprog-chunk-end-pattern)))
-    (with-current-buffer litprog-code-buffer
+                               litprog-chunk-end-pattern))
+        (doc-mode litprog-doc-mode)
+        (code-mode litprog-code-mode))
+    (with-current-buffer code-buffer
       (litprog-set-local-variables)
       ;; Add font-lock stuff for chunk uses in code.  Add syntactic
       ;; keywords to treat them as comments with
@@ -342,27 +351,27 @@ options. Note that there is no explicit check for recursion.
       ;; overriding patterns.
       (set (make-local-variable 'font-lock-syntactic-keywords)
            (append (font-lock-eval-keywords font-lock-syntactic-keywords)
-                   (list (or litprog-font-lock-syntactic-matcher
+                   (list (or litprog-fl-syntactic-matcher
                              (cons chunk-pattern '(0 "!"))))))
       (set (make-local-variable 'font-lock-keywords)
            (append (font-lock-eval-keywords font-lock-keywords)
-                   (list (or litprog-font-lock-matcher
+                   (list (or litprog-fl-matcher
                              (cons chunk-pattern '(0 'font-lock-keyword-face t)))))))
-    (with-current-buffer litprog-doc-buffer
+    (with-current-buffer doc-buffer
       (litprog-set-local-variables)
-      (when litprog-font-lock-literal-syntactic-matcher
+      (when litprog-fl-literal-syntactic-matcher
         (set (make-local-variable 'font-lock-syntactic-keywords)
              (append (font-lock-eval-keywords font-lock-syntactic-keywords)
-                     (list litprog-font-lock-literal-syntactic-matcher)))))
+                     (list litprog-fl-literal-syntactic-matcher)))))
     ;; in base buffer 
     (litprog-set-local-variables)
     ;; Use Imenu to navigate chunks.
     ;; (set (make-local-variable 'imenu-generic-expression)
     ;;      litprog-imenu-generic-expression)
     ;; (imenu-add-menubar-index)
-    (when litprog-font-lock-keywords 
+    (when litprog-fl-keywords 
       (set (make-local-variable 'font-lock-defaults)
-           '(litprog-font-lock-keywords nil nil nil nil))
+           '(litprog-fl-keywords nil nil nil nil))
       ;; Fixme:  Why is this is necessary in Emacs 22+ to get
       ;; font-lock-keywords defined?
       (font-lock-set-defaults))
@@ -371,15 +380,68 @@ options. Note that there is no explicit check for recursion.
     (set (make-local-variable 'outline-level) (lambda () 1))
     ))
 
+
+
+(defvar litprog-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map litprog-prefix-key
+      (let ((map (make-sparse-keymap)))
+	(define-key map "\C-n" 'litprog-next-header)
+	(define-key map "\C-p" 'litprog-previous-header)
+	;; (define-key map "\M-n" 'litprog-goto-next)
+	;; (define-key map "\M-p" 'litprog-goto-prev)
+	;; (define-key map "c" 'litprog-code-next)
+	;; (define-key map "C" 'litprog-code-prev)
+	;; (define-key map "d" 'litprog-doc-next)
+	;; (define-key map "D" 'litprog-doc-prev)
+        ;; Use imenu.
+        ;; 	(define-key map "\C-g" 'litprog-goto-chunk)
+
+        (define-key map "\M-k" 'litprog-kill-chunk)
+        (define-key map "\M-K" 'litprog-kill-chunk-pair)
+        (define-key map "\M-m" 'litprog-mark-chunk)
+        (define-key map "\M-M" 'litprog-mark-chunk-pair)
+        (define-key map "\M-n" 'litprog-narrow-to-chunk)
+        (define-key map "\M-N" 'litprog-narrow-to-chunk-pair)
+        (define-key map "\C-t" 'litprog-toggle-narrowing)
+	(define-key map "\M-i" 'litprog-new-chunk)
+
+	;; (if (bound-and-true-p litprog-electric-<)
+	;;     (define-key litprog-mode-map "<" #'litprog-electric-<))
+	;; (if (bound-and-true-p litprog-electric-@)
+	;;     (define-key litprog-mode-map "@" #'litprog-electric-@))
+	map))
+    (define-key map [menu-bar LitProG]
+      (cons "LitProG"
+	    (let ((map (make-sparse-keymap "LitProG")))
+              (define-key-after map [goto-prev]
+		'(menu-item "Next chunk header" litprog-next-header))
+	      (define-key-after map [goto-prev]
+		'(menu-item "Previous chunk header" litprog-previous-header))
+	      (define-key-after map [mark]
+		'(menu-item "Mark chunk" litprog-mark-chunk))
+	      (define-key-after map [kill]
+		'(menu-item "Kill chunk" litprog-kill-chunk))
+	      (define-key-after map [new]
+		'(menu-item "New chunk" litprog-new-chunk))
+	      map)))
+    map)
+  "A keymap for LitProG mode.")
+
+
 (define-derived-mode litprog-mode fundamental-mode "LitProG"
   "Mode for editing LitProg documents.
 Supports differnt major modes for doc and code chunks using multi-mode.
 
 Note: This is the major mode of the base buffer. 
 "
-  (litprog-setq litprog-mode)
+  (litprog-set-options litprog-mode)
 )
 
+;; Used to propagate the bindings to the indirect buffers.
+(define-minor-mode litprog-minor-mode
+  "LitProg minor mode, used in code and doc chunks."
+  nil " LP" litprog-mode-map)
 
 (provide 'litprog)
 ;;; litprog.el ends here
