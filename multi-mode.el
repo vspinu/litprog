@@ -280,11 +280,11 @@ is the base mode."
 		  font-lock-fontify-region-function)
 	    (set (make-local-variable 'font-lock-fontify-region-function)
 		 #'multi-fontify-region)
-	    (setq multi-normal-fontify-functions fontification-functions)
-	    (setq fontification-functions '(multi-fontify))
-	    ;; Don't let parse-partial-sexp get fooled by syntax outside
+            ;; Don't let parse-partial-sexp get fooled by syntax outside
 	    ;; the chunk being fontified.  (Not in Emacs 21.)
 	    (set (make-local-variable 'font-lock-dont-widen) t)
+	    ;; (setq multi-normal-fontify-functions fontification-functions)
+	    ;; (setq fontification-functions '(multi-fontify))
 
 	    (setq multi-late-index-function imenu-create-index-function)
 	    (setq imenu-create-index-function #'multi-create-index
@@ -341,8 +341,8 @@ beginning of the chunk and with the buffer narrowed to the chunk."
 	(unless (multi-next-chunk-start)
 	  (goto-char (point-max)))))))
 
-;; We need this for asynchronous fontification by jit-lock, even
-;; though we're redefining `fontification-functions'.
+;; We need this for asynchronous fontification by jit-lock, even though we're
+;; redefining `fontification-functions'.
 (defun multi-fontify-region (beg end loudly)
   "Multi-mode font-lock fontification function.
 Fontifies chunk-by chunk within the region.
@@ -368,13 +368,19 @@ Assigned to `font-lock-fontify-region-function'."
 
 ;; I'm not sure it's worth trying to support non-font-lock
 ;; fontification functions like this (see this file's commentary).
-(defun multi-fontify (start)
-  "Multi-mode fontification function.
-Fontifies chunk-by-chunk within the region from START for up to
-`multi-fontification-chunk-size' characters."
-  (save-restriction
-    (multi-narrow-to-chunk)
-    (run-hook-with-args 'multi-normal-fontify-functions start)))
+;; 
+;; VS[10-06-2012]: Any meaningfull fontification function should also call
+;; font-lock-fontify-region-function which we set (as jit-lock-function does
+;; that. The bellow produces Error during redisplay: (args-out-of-range 3666
+;; 3697) because start might be outside the narrowing range. So I am removing this.
+;;
+;; (defun multi-fontify (start)
+;;   "Multi-mode fontification function.
+;; Fontifies chunk-by-chunk within the region from START for up to
+;; `multi-fontification-chunk-size' characters."
+;;   (save-restriction
+;;     (multi-narrow-to-chunk)
+;;     (run-hook-with-args 'multi-normal-fontify-functions start)))
 
 (defun multi-create-index ()
   "Create Imenu index alist for the currently-selected buffer.
