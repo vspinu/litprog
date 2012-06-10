@@ -131,10 +131,10 @@
 Internal use.  Buffer local.")
 (make-variable-buffer-local 'multi-indirect-buffers-alist)
 
-(defvar multi-normal-fontify-function nil
+(defvar multi-fontify-region-original nil
   "Fontification function normally used by the buffer's major mode.
-Internal use.  Buffer local.")
-(make-variable-buffer-local 'multi-normal-fontify-function)
+Used internaly to cahce font-lock-fontify-region-function.  Buffer local.")
+(make-variable-buffer-local 'multi-fontify-region-original)
 
 
 (defvar multi-indirect-buffer-hook nil
@@ -276,7 +276,7 @@ is the base mode."
 			      map))
 		      minor-mode-map-alist)))
 
-	    (setq multi-normal-fontify-function
+	    (setq multi-fontify-region-original
 		  font-lock-fontify-region-function)
 	    (set (make-local-variable 'font-lock-fontify-region-function)
 		 #'multi-fontify-region)
@@ -359,7 +359,7 @@ Assigned to `font-lock-fontify-region-function'."
       (multi-map-over-chunks
        beg end (lambda ()
 		 (if (and font-lock-mode font-lock-keywords)
-		     (funcall multi-normal-fontify-function
+		     (funcall multi-fontify-region-original
 			      (point-min) (point-max) loudly)))))
     ;; In case font-lock isn't done for some mode:
     (put-text-property beg end 'fontified t)
