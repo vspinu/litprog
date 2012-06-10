@@ -62,8 +62,6 @@ opts_chunk$set(fig.path='figure/beamer-',fig.align='center',fig.show='hold',size
 
 <<setup, include=FALSE>>=
 opts_chunk$set(fig.path='figure/beamer-',fig.align='center',fig.show='hold',size='footnotesize')
-
-
 @
 
 
@@ -91,7 +89,7 @@ more control
 \end{itemize}
 \item If you already have Sweave working in \LyX{}, getting \textbf{knitr}
 to work is trivial
-
+ 
 \begin{enumerate}
 \item Install the \textbf{knitr} package in \emph{R}
 \item Read \url{http://yihui.name/knitr/demo/lyx/}
@@ -101,24 +99,27 @@ use the \emph{Beamer Fragile} module%
 \footnote{\url{http://www.lyx.org/trac/ticket/7273}%
 } too. Let's see if \textbf{knitr} works with Beamer in this small
 demo. 
+
 \end{itemize}
 
 \lyxframeend{}\section{First Test}
 
 \begin{frame}
 [fragile]
+
 \frametitle{First Test}
 
 OK, let's get started with just some text:
 
 <<echo=FALSE,results='hide'>>=
-# some setup
+# some setup 
 qoptions(width=60)  # make the printing fit on the page
 set.seed(1121)   # make the results repeatable
 @
 
-<<>>= 
-# create some random numbers
+
+<<dsfs>>=
+ # create some random numbers 
 (x=rnorm(20))  
 mean(x);var(x)  
 @
@@ -135,7 +136,8 @@ the use of\texttt{ \textbackslash{}Sexpr\{\}}.)
 [fragile]
 \frametitle{Second Test}
 
-Text is nice but let's see what happens if we make a couple of plots
+
+ Text is nice but let's see what happens if we make a couple of plots
 in our chunk:
 
 <<boring-plots,fig.width=4,fig.height=4,out.width='.45\\linewidth'>>=
@@ -146,19 +148,20 @@ lines(density(x),col="red")
 @
 \end{frame}
 
-
+sdf
 
 \lyxframeend{}\section{The Big Question}
 
 
 \lyxframeend{}\lyxframe{The Big Question}
 
-Do the above chunks work? You should be able to compile the \LyX{}
+
+Do the   above chunks work? You should be able to compile the \LyX{}
 document and get a nice-looking PDF slide presentation. If not, time
 to double-check everything...
-
+  
 
 \lyxframeend{}
-
+ 
 \end{document}
-em
+e  
