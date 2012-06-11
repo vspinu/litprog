@@ -275,8 +275,6 @@ options. Note that there is no explicit check for recursion.
 
 
 ;;; MAIN
-
-
 (defun litprog-get-mode-at-point-default (pos)
   "Mode-selecting function for use in `multi-mode-alist'."
   (save-excursion
@@ -313,7 +311,7 @@ options. Note that there is no explicit check for recursion.
   ;;           'litprog-select-litprog-mode-hook)
   )
 
-(defun linprog-install-modes ()
+(defun litprog-install-modes ()
   ;; Extract values of local variables now, so we know the doc and
   ;; code modes.  Nullify litprog-mode2 while we process possible
   ;; `mode: noweb' line to avoid infinite regress.
