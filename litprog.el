@@ -29,6 +29,22 @@
 ;;; Commentary:
 ;;  Based on noweb.el by Dave Love.
 
+;;; TODO:
+;;  litprog backend actions: (act on region if supported)
+;;  w: weave
+;;  t: tangle
+;;  e: export (a generic exporte)
+;;  E: execute ????  (like org-babel-execute-buffer) most likely not (just select hwole buf)
+;;  M-n (double prefix): evaluate chunk (acts on region + positive negative args? + uniform is reserved)
+;;  p: PDF
+;;  P: PS ?? not needed really
+;;  l: latex
+;;  o: openDocument
+;;  d: dvi
+;;  D: docBook ??
+;;  h: html
+;;
+;;  M-i: chunk info (like org-babel-view-src-block-info)
 
 
 ;; (require 'multi-mode)
