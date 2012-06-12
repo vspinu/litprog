@@ -63,11 +63,11 @@
   "Major mode for documentation chunks.")
 (make-variable-buffer-local 'litprog-doc-mode)
 
-(defvar litprog-code-mode nil
+(defvar lp-code-mode nil
   "Default major mode for code chunks.
 There can be several code modes.
 ")
-(make-variable-buffer-local 'litprog-code-mode)
+(make-variable-buffer-local 'lp-code-mode)
 
 
 
@@ -86,35 +86,35 @@ There can be several code modes.
   :group 'LitProg
   :type 'hook)
 
-(defvar litprog-chunk-start-pattern nil
+(defvar lp-chunk-start-pattern nil
   "Regexp matching the start of a chunk header.")
-(make-variable-buffer-local 'litprog-chunk-header-pattern)
+(make-variable-buffer-local 'lp-chunk-header-pattern)
 
-(defvar litprog-chunk-end-pattern nil
+(defvar lp-chunk-end-pattern nil
   "Regexp matching the start of a chunk header.")
-(make-variable-buffer-local 'litprog-chunk-header-pattern)
+(make-variable-buffer-local 'lp-chunk-header-pattern)
 
 
-(defvar litprog-fl-matcher nil
+(defvar lp-font-lock-matcher nil
   "Matcher used in code buffers to set chunk header fontification.
-If nil `litprog-chunk-start-pattern'\\|`litprog-chunk-end-pattern' is used.
+If nil `lp-chunk-start-pattern'\\|`lp-chunk-end-pattern' is used.
 See `font-lock-keywords'.
 ")
 
-(defvar litprog-fl-syntactic-matcher nil
+(defvar lp-font-lock-syntactic-matcher nil
   "Matcher used in code buffers to set chunk header to comment syntax.
-If nil `litprog-chunk-start-pattern'\\|`litprog-chunk-end-pattern' is used.
+If nil `lp-chunk-start-pattern'\\|`lp-chunk-end-pattern' is used.
 See `font-lock-syntactic-keywords'.
 ")
 
 
-(defvar litprog-fl-literal-syntactic-matcher nil
+(defvar lp-font-lock-literal-syntactic-matcher nil
   "Matcher used in doc buffers to set in-line literals to string syntax.
 ")
 
-(defvar litprog-fl-keywords nil
+(defvar lp-font-lock-keywords nil
   "A list of font lock keywords for headers")
-(make-variable-buffer-local 'litprog-fl-keywords)
+(make-variable-buffer-local 'lp-font-lock-keywords)
 
 
 (defcustom litprog-prefix-key "\M-n"
@@ -136,7 +136,7 @@ Not effective after loading the LitProg library."
 
 (defun litprog-check-essential-vars ()
   "Error if any of these are not set"
-  (dolist (var '(litprog-doc-mode litprog-chunk-start-pattern litprog-chunk-end-pattern))
+  (dolist (var '(litprog-doc-mode lp-chunk-start-pattern lp-chunk-end-pattern))
     (unless (symbol-value var)
       (error (symbol-name var) " is not set"))))
 
@@ -181,7 +181,7 @@ Each element is of the form '(mode \"ext1\" \"ext2\" ...)."
   (interactive "p")
   (when litprog-narrowing
     (whiden))
-  (unless (re-search-forward  litprog-chunk-start-pattern nil t n)
+  (unless (re-search-forward  lp-chunk-start-pattern nil t n)
     (message "No more chunk headers found."))
   (if litprog-narrowing
       (litprog-narrow-to-chunk-pair)))
@@ -266,7 +266,7 @@ options. Note that there is no explicit check for recursion.
   `(let* ((backend (plist-get litprog-options ',(car what)))
           (mcust   (plist-get backend ',(cadr what))))
      ;; set all the inherited modes
-     (mapcar 'litprog-set-options (plist-get mcust 'litprog-inherit))
+     (mapcar 'litprog-set-options (plist-get mcust 'lp-inherit))
      (loop for x on mcust by 'cddr
            do (set (car x)  (cadr x)))))
   
@@ -279,26 +279,26 @@ options. Note that there is no explicit check for recursion.
 
 (litprog-customize litprog-mode
   litprog-doc-mode                      nil
-  litprog-code-mode                     nil
-  litprog-get-mode-at-point-function         'litprog-get-mode-at-point
-  litprog-chunk-start-pattern           nil
-  litprog-chunk-end-pattern             nil
-  litprog-fl-keywords            nil
-  litprog-fl-matcher             nil
-  litprog-fl-syntactic-matcher   nil
-  litprog-fl-literal-syntactic-matcher  nil
+  lp-code-mode                     nil
+  lp-get-mode-at-point-function         'lp-get-mode-at-point
+  lp-chunk-start-pattern           nil
+  lp-chunk-end-pattern             nil
+  lp-font-lock-keywords            nil
+  lp-font-lock-matcher             nil
+  lp-font-lock-syntactic-matcher   nil
+  lp-font-lock-literal-syntactic-matcher  nil
   )
 
 
 ;;; MAIN
-(defun litprog-get-mode-at-point-default (pos)
+(defun lp-get-mode-at-point-default (pos)
   "Mode-selecting function for use in `multi-mode-alist'."
   (save-excursion
     (save-restriction
       (widen)
       (goto-char pos)
-      (let* ((reg (concat "\\(?1:\\(" litprog-chunk-end-pattern "\\)\\)\\|\\(?2:\\("
-                          litprog-chunk-start-pattern "\\)\\)"))
+      (let* ((reg (concat "\\(?1:\\(" lp-chunk-end-pattern "\\)\\)\\|\\(?2:\\("
+                          lp-chunk-start-pattern "\\)\\)"))
              (found (re-search-backward reg nil t))
              (start-doc (or (null found) (match-end 1)))
              (start (goto-char (if found (match-end 0) (point-min))))
@@ -309,13 +309,13 @@ options. Note that there is no explicit check for recursion.
         (if (or (null end0) (< pos end0))
             (if start-doc
                 (multi-make-list litprog-doc-mode start (or end0 (point-max)))
-              (multi-make-list litprog-code-mode start (or end0 (point-max))))
+              (multi-make-list lp-code-mode start (or end0 (point-max))))
           (multi-make-list 'litprog-mode end0 end1))))))
 
 
 (defun litprog-set-local-variables ()
   (setq litprog-doc-mode doc-mode)
-  (setq litprog-code-mode code-mode)
+  (setq lp-code-mode code-mode)
   (set (make-local-variable 'litprog-code-buffer) code-buffer)
   (set (make-local-variable 'litprog-doc-buffer) doc-buffer)
   (set (make-local-variable 'litprog-buffer) base-buffer)
@@ -334,25 +334,25 @@ options. Note that there is no explicit check for recursion.
   (flet ((litprog-mode ()))
     (hack-local-variables)
     (litprog-check-essential-vars)
-    (setq litprog-code-mode
-            (or litprog-code-mode
+    (setq lp-code-mode
+            (or lp-code-mode
                 (litprog-guess-code-mode-from-name (buffer-file-name))
                 'fundamental-mode))
     (let ((multi-mode-alist
-           (list (cons 'litprog-mode            litprog-get-mode-at-point-function)
+           (list (cons 'litprog-mode            lp-get-mode-at-point-function)
                  (cons litprog-doc-mode         nil)
-                 (cons litprog-code-mode        nil))))
+                 (cons lp-code-mode        nil))))
       (multi-mode-install-modes)))
   (let ((doc-buffer (cdr (assq litprog-doc-mode
                                        multi-indirect-buffers-alist)))
-        (code-buffer (cdr (assq litprog-code-mode
+        (code-buffer (cdr (assq lp-code-mode
                                        multi-indirect-buffers-alist)))
         (base-buffer (cdr (assq 'litprog-mode
                                    multi-indirect-buffers-alist)))
-        (chunk-pattern (concat litprog-chunk-start-pattern "\\|"
-                               litprog-chunk-end-pattern))
+        (chunk-pattern (concat lp-chunk-start-pattern "\\|"
+                               lp-chunk-end-pattern))
         (doc-mode litprog-doc-mode)
-        (code-mode litprog-code-mode))
+        (code-mode lp-code-mode))
     (with-current-buffer code-buffer
       (litprog-set-local-variables)
       ;; Add font-lock stuff for chunk uses in code.  Add syntactic
@@ -365,27 +365,27 @@ options. Note that there is no explicit check for recursion.
       ;; overriding patterns.
       (set (make-local-variable 'font-lock-syntactic-keywords)
            (append (font-lock-eval-keywords font-lock-syntactic-keywords)
-                   (list (or litprog-fl-syntactic-matcher
+                   (list (or lp-font-lock-syntactic-matcher
                              (cons chunk-pattern '(0 "!"))))))
       (set (make-local-variable 'font-lock-keywords)
            (append (font-lock-eval-keywords font-lock-keywords)
-                   (list (or litprog-fl-matcher
+                   (list (or lp-font-lock-matcher
                              (cons chunk-pattern '(0 'font-lock-keyword-face t)))))))
     (with-current-buffer doc-buffer
       (litprog-set-local-variables)
-      (when litprog-fl-literal-syntactic-matcher
+      (when lp-font-lock-literal-syntactic-matcher
         (set (make-local-variable 'font-lock-syntactic-keywords)
              (append (font-lock-eval-keywords font-lock-syntactic-keywords)
-                     (list litprog-fl-literal-syntactic-matcher)))))
+                     (list lp-font-lock-literal-syntactic-matcher)))))
     ;; in base buffer 
     (litprog-set-local-variables)
     ;; Use Imenu to navigate chunks.
     ;; (set (make-local-variable 'imenu-generic-expression)
     ;;      litprog-imenu-generic-expression)
     ;; (imenu-add-menubar-index)
-    (when litprog-fl-keywords 
+    (when lp-font-lock-keywords 
       (set (make-local-variable 'font-lock-defaults)
-           '(litprog-fl-keywords nil nil nil nil))
+           '(lp-font-lock-keywords nil nil nil nil))
       ;; Fixme:  Why is this is necessary in Emacs 22+ to get
       ;; font-lock-keywords defined?
       (font-lock-set-defaults))
@@ -421,6 +421,7 @@ options. Note that there is no explicit check for recursion.
 	(define-key map "\M-i" 'litprog-new-chunk)
 
 	(define-key map "."	'litprog-select-backend)
+	(define-key map "$"	'litprog-display-process)
 	;; (if (bound-and-true-p litprog-electric-<)
 	;;     (define-key litprog-mode-map "<" #'litprog-electric-<))
 	;; (if (bound-and-true-p litprog-electric-@)
@@ -459,58 +460,6 @@ Note: This is the major mode of the base buffer.
   nil " LP" litprog-mode-map)
 
 
-
-;;; backend interaction
-
-(defvar litprog-weave-function ()
-  "Function to weave current file ")
-(make-variable-buffer-local 'litprog-weave-function)
-
-(defvar litprog-weave-region-function ()
-  "Function to weave region ")
-(make-variable-buffer-local 'litprog-weave-region-function)
-
-(defun litprog-weave ()
-  "Weave current buffer.
-Backend specific action."
-    (interactive)
-    (litprog-call-backend-function litprog-weave-function
-				   litprog-weave-region-function))
-
-(defvar litprog-tangle-function ()
-  "Function to tangle current file ")
-(make-variable-buffer-local 'litprog-tangle-function)
-
-(defvar litprog-tangle-region-function ()
-  "Function to tangle region ")
-(make-variable-buffer-local 'litprog-tangle-region-function)
-
-(defun litprog-tangle ()
-  "Tangle current buffer.
-Backend specific action."
-  (interactive)
-  (litprog-call-backend-function litprog-tangle-function
-				 litprog-tangle-region-function))
-
-(defvar litprog-default-backend nil
-  "Name (a symbol) of the default backend for this mode if any.")
-(make-variable-buffer-local 'litprog-default-backend)
-
-(defvar litprog-current-backend nil
-  "Name (a symbol) of the current backend.")
-(make-variable-buffer-local 'litprog-current-backend)
-
-(defun litprog-call-backend-function (fun region-fun)
-    (unless
-	(if  (and mark-active transient-mark-mode)
-	    (if (not region-fun)
-		(prog1 nil
-		  (message "Backend '%s' does not support this action on region, appying to the whole buffer"))
-	      (call-interactively region-fun)
-	      'done))
-      (if fun
-	  (call-interactively fun)
-	(error "Backend '%s' does not support this action"))))
 
 
 (provide 'litprog)

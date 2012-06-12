@@ -1,3 +1,58 @@
+
+;;; backend interaction
+
+(defun litprog-weave ()
+  "Weave current buffer.
+Backend specific action."
+  (interactive)
+  (litprog-call-backend-function lp-weave-function
+				 lp-weave-region-function))
+
+(defvar lp-weave-function ()
+  "Function to weave current file ")
+(make-variable-buffer-local 'lp-weave-function)
+
+(defvar lp-weave-region-function ()
+  "Function to weave region ")
+(make-variable-buffer-local 'lp-weave-region-function)
+
+
+(defvar lp-tangle-function ()
+  "Function to tangle current file ")
+(make-variable-buffer-local 'lp-tangle-function)
+
+(defvar lp-tangle-region-function ()
+  "Function to tangle region ")
+(make-variable-buffer-local 'lp-tangle-region-function)
+
+(defun litprog-tangle ()
+  "Tangle current buffer.
+Backend specific action."
+  (interactive)
+  (litprog-call-backend-function lp-tangle-function
+				 lp-tangle-region-function))
+
+(defvar lp-default-backend nil
+  "Name (a symbol) of the default backend for this mode if any.")
+(make-variable-buffer-local 'lp-default-backend)
+
+(defvar litprog-current-backend nil
+  "Name (a symbol) of the current backend.")
+(make-variable-buffer-local 'litprog-current-backend)
+
+(defun litprog-call-backend-function (fun region-fun)
+  (unless
+      (if  (and mark-active transient-mark-mode)
+	  (if (not region-fun)
+	      (prog1 nil
+		(message "Backend '%s' does not support this action on region, appying to the whole buffer"))
+	    (call-interactively region-fun)
+	    'done))
+    (if fun
+	(call-interactively fun)
+      (error "Backend '%s' does not support this action"))))
+
+
 (defun litprog-process-sentinel (process event)
   (let ((msg (format "%s %s." (process-name process) (substring event 0 -1)))
         (successp (string-match "^finished" event))
@@ -19,19 +74,25 @@
 
 
 
+
+(defun litprog-display-process ()
+  "Display output from most recent git command."
+  (interactive)
+  (unless (get-buffer litprog-process-buffer-name)
+    (error "No Litprog commands have run"))
+  (display-buffer magit-process-buffer-name))
+
 (defvar litprog-process nil)
 (defvar litprog-process-buffer-name "*litprog-process*")
 
 (defun litprog-run-async (program &rest args)
   (message "Running %s %s" program (mapconcat 'identity args " "))
-  (litprog-run (append (cons magit-git-executable
-			     magit-git-standard-options)
-		       args)
-	       nil nil nil t))
+  (litprog-run program args nil nil t))
 
-;; riped from magit
+
+;; based on magit-run*
 (defun litprog-run (cmd args
-		    &optional noerase noerror nowait input)
+		    &optional noerase noerror nowait)
   (if (and litprog-process
            (get-buffer litprog-process-buffer-name))
       (error "Litprog process is already running"))
@@ -69,6 +130,7 @@
 	  (setq successp
 		(equal (process-exit-status litprog-process) 0))))
       (or successp
+	  noerror
           (error
            "%s ... [Hit %s or see buffer %s for details]"
            (or (with-current-buffer (get-buffer litprog-process-buffer-name)
@@ -121,26 +183,34 @@ lp-[name]-uninstall-hook.
        (defvar ,un-name nil
 	 ,(format "Hook run when backend '%s' is uninstalled" name)))))
 	
-  
 
 
-;;; Sweave
-(defvar lp-latex-use-auctex-p t
-  "Try to use auctex interface if available.")
+;;; LaTeX
+;; (defvar lp-latex-use-auctex-p t
+;;   "Try to use auctex interface if available.")
 
-(defvar lp-latex-use-latexmk-p t
-  "Try to use latexmk if available.")
-
+;; (defvar lp-latex-use-latexmk-p t
+;;   "Try to use latexmk if available.")
 
 
 (litprog-define-backend latex)
+(litprog-customize (latex litprog-mode)
+  lp-weave-function nil
+  lp-tangle-function nil
+
+  )
+
+
+;;; Sweave
+
+
+
 
 (litprog-define-backend Sweave)
 (litprog-customize (Sweave litprog-noweb-mode)
-  
-    litprog-code-mode				'R-mode
-    litprog-fl-literal-syntactic-matcher	'("\\(\\\\Sexpr{\\)[^}]*\\(}\\)" (1 "|") (2 "|"))
-    
-    )
+  lp-inherit	'((latex litprog-mode))
+  lp-code-mode				'R-mode
+  lp-fl-literal-syntactic-matcher	'("\\(\\\\Sexpr{\\)[^}]*\\(}\\)" (1 "|") (2 "|"))    
+  )
 
 

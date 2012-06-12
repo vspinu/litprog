@@ -21,22 +21,22 @@
 
 
 (litprog-customize lp-noweb-mode
-  litprog-doc-mode                    'latex-mode
-  ;; litprog-select-mode-function       . 'litprog-select-mode:nw
-  litprog-chunk-start-pattern         "^<<\\(.*\\)>>="
-  litprog-chunk-end-pattern           "^\\(@ +%def .*\\)$\\|\\(@[ \n]\\)"
-  litprog-font-lock-keywords         `(("^\\(<<\\)\\(.*\\)\\(>>=\\)$" (1 'font-lock-keyword-face)
+  lp-doc-mode                    'latex-mode
+  ;; lp-select-mode-function       . 'lp-select-mode:nw
+  lp-chunk-start-pattern         "^<<\\(.*\\)>>="
+  lp-chunk-end-pattern           "^\\(@ +%def .*\\)$\\|\\(@[ \n]\\)"
+  lp-font-lock-keywords         `(("^\\(<<\\)\\(.*\\)\\(>>=\\)$" (1 'font-lock-keyword-face)
 					(2 'font-lock-variable-name-face) (3 'font-lock-keyword-face))
 				       ("^\\(@ +%def\\) +\\(.+\\)"
 					(1 'font-lock-keyword-face)
 					(2 'font-lock-variable-name-face))
 				       "^@")
-  litprog-font-lock-matcher          '("\\(?:$\\|[^@]\\|\\`\\)\\(<<\\)\\([^>]+\\)\\(>>\\)"
+  lp-font-lock-matcher          '("\\(?:$\\|[^@]\\|\\`\\)\\(<<\\)\\([^>]+\\)\\(>>\\)"
 				       (1 'font-lock-keyword-face t)
 				       (2 'font-lock-variable-name-face t)
 				       (3 'font-lock-keyword-face t))
-  litprog-font-lock-syntactic-matcher  '("\\(?:$\\|[^@]\\)\\(<\\)<[^>]+>\\(>\\)" (1 "!") (2 "!"))
-  litprog-font-lock-literal-syntactic-matcher '("\\(\\[\\)\\[[^]]+]\\(]\\)" (1 "|") (2 "|"))
+  lp-font-lock-syntactic-matcher  '("\\(?:$\\|[^@]\\)\\(<\\)<[^>]+>\\(>\\)" (1 "!") (2 "!"))
+  lp-font-lock-literal-syntactic-matcher '("\\(\\[\\)\\[[^]]+]\\(]\\)" (1 "|") (2 "|"))
   )
 
 (define-derived-mode lp-noweb-mode litprog-mode "LP-Noweb"
