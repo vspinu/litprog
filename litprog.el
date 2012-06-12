@@ -420,6 +420,7 @@ options. Note that there is no explicit check for recursion.
         (define-key map "\C-t" 'litprog-toggle-narrowing)
 	(define-key map "\M-i" 'litprog-new-chunk)
 
+	(define-key map "."	'litprog-select-backend)
 	;; (if (bound-and-true-p litprog-electric-<)
 	;;     (define-key litprog-mode-map "<" #'litprog-electric-<))
 	;; (if (bound-and-true-p litprog-electric-@)
@@ -456,6 +457,61 @@ Note: This is the major mode of the base buffer.
 (define-minor-mode litprog-minor-mode
   "LitProg minor mode, used in code and doc chunks."
   nil " LP" litprog-mode-map)
+
+
+
+;;; backend interaction
+
+(defvar litprog-weave-function ()
+  "Function to weave current file ")
+(make-variable-buffer-local 'litprog-weave-function)
+
+(defvar litprog-weave-region-function ()
+  "Function to weave region ")
+(make-variable-buffer-local 'litprog-weave-region-function)
+
+(defun litprog-weave ()
+  "Weave current buffer.
+Backend specific action."
+    (interactive)
+    (litprog-call-backend-function litprog-weave-function
+				   litprog-weave-region-function))
+
+(defvar litprog-tangle-function ()
+  "Function to tangle current file ")
+(make-variable-buffer-local 'litprog-tangle-function)
+
+(defvar litprog-tangle-region-function ()
+  "Function to tangle region ")
+(make-variable-buffer-local 'litprog-tangle-region-function)
+
+(defun litprog-tangle ()
+  "Tangle current buffer.
+Backend specific action."
+  (interactive)
+  (litprog-call-backend-function litprog-tangle-function
+				 litprog-tangle-region-function))
+
+(defvar litprog-default-backend nil
+  "Name (a symbol) of the default backend for this mode if any.")
+(make-variable-buffer-local 'litprog-default-backend)
+
+(defvar litprog-current-backend nil
+  "Name (a symbol) of the current backend.")
+(make-variable-buffer-local 'litprog-current-backend)
+
+(defun litprog-call-backend-function (fun region-fun)
+    (unless
+	(if  (and mark-active transient-mark-mode)
+	    (if (not region-fun)
+		(prog1 nil
+		  (message "Backend '%s' does not support this action on region, appying to the whole buffer"))
+	      (call-interactively region-fun)
+	      'done))
+      (if fun
+	  (call-interactively fun)
+	(error "Backend '%s' does not support this action"))))
+
 
 (provide 'litprog)
 ;;; litprog.el ends here
