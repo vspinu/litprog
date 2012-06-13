@@ -193,10 +193,11 @@ lp-[name]-uninstall-hook.
 ;;   "Try to use latexmk if available.")
 
 
-(litprog-define-backend latex)
+(litprog-define-backend latex
+  "Litprog export backend for from latex sources.")
+
 (litprog-customize (latex litprog-mode)
-  lp-weave-function nil
-  lp-tangle-function nil
+  
 
   )
 
